@@ -93,10 +93,10 @@ class _PreviewPageState extends State<PreviewPage> {
       return PhotoView(
         imageProvider: NetworkImage(_getFileUrl()),
         loadingBuilder: (context, event) {
-          final total = event.expectedTotalBytes;
-          final loaded = event.cumulativeBytesLoaded;
+          final total = event?.expectedTotalBytes;
+          final loaded = event?.cumulativeBytesLoaded;
           String percentText = '加载中...';
-          if (total != null) {
+          if (total != null && loaded != null) {
             percentText = '加载中... ${(loaded / total * 100).toStringAsFixed(0)}%';
           }
           return Center(
