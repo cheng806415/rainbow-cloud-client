@@ -66,7 +66,7 @@ class ApiClient {
     try {
       final response = await _dio.post('/login.php',
         queryParameters: {'act': 'local_login'},
-        data: {'username': username, 'password': password},
+        data: FormData.fromMap({'username': username, 'password': password}),
       );
       if (response.data['code'] == 0) {
         _isLoggedIn = true;
@@ -85,7 +85,7 @@ class ApiClient {
     try {
       final response = await _dio.post('/login.php',
         queryParameters: {'act': 'local_register'},
-        data: {'username': username, 'password': password, 'repassword': repassword},
+        data: FormData.fromMap({'username': username, 'password': password, 'repassword': repassword}),
       );
       final responseData = response.data is Map ? response.data : {};
       if (responseData['code'] == 0) {

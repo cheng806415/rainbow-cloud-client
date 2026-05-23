@@ -49,14 +49,14 @@ class _UploadPageState extends State<UploadPage> {
 
       final preResponse = await apiClient.post('/ajax.php',
         queryParameters: {'act': 'pre_upload'},
-        data: {
+        data: FormData.fromMap({
           'csrf_token': apiClient.csrfToken,
           'name': task.name,
           'hash': md5Hash,
           'size': fileSize,
           'show': 1,
           'ispwd': 0,
-        },
+        }),
       );
 
       if (preResponse.data['code'] == 1) {
