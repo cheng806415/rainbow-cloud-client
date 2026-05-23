@@ -48,7 +48,7 @@ class ApiClient {
         'Referer': _baseUrl + '/',
         'Origin': '${uri.scheme}://${uri.host}',
       },
-      validateStatus: (status) => status != null && status < 500,
+      validateStatus: (status) => true,
     ));
 
     _dio.interceptors.add(CookieManager(_cookieJar));
@@ -152,6 +152,7 @@ class ApiClient {
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: AppConstants.requestTimeout),
       receiveTimeout: const Duration(seconds: AppConstants.requestTimeout),
+      validateStatus: (status) => true,
     ));
     _dio.interceptors.add(CookieManager(_cookieJar));
   }
@@ -185,8 +186,22 @@ class ApiClient {
   }
 
   Map<String, dynamic> _safeResponse(Response response) {
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      if (response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data);
+        return {'code': -1, 'msg': data['msg'] ?? '服务器错误 (${response.statusCode})'};
+      }
+      if (response.data is String) {
+        final parsed = _tryParseJson(response.data as String);
+        if (parsed != null) return parsed;
+      }
+      return {'code': -1, 'msg': '服务器错误 (HTTP ${response.statusCode})'};
+    }
     if (response.data is Map<String, dynamic>) {
       return response.data as Map<String, dynamic>;
+    }
+    if (response.data is Map) {
+      return Map<String, dynamic>.from(response.data);
     }
     if (response.data is String) {
       try {
