@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
@@ -35,6 +36,8 @@ class ApiClient {
     _baseUrl = baseUrl.replaceAll(RegExp(r'/+$'), '');
     _cookieJar = CookieJar();
 
+    final uri = Uri.parse(_baseUrl);
+
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: AppConstants.requestTimeout),
@@ -42,6 +45,8 @@ class ApiClient {
       sendTimeout: const Duration(seconds: 120),
       headers: {
         'Accept': 'application/json',
+        'Referer': _baseUrl + '/',
+        'Origin': '${uri.scheme}://${uri.host}',
       },
       validateStatus: (status) => status != null && status < 500,
     ));
@@ -52,8 +57,9 @@ class ApiClient {
   Future<String?> getCsrfToken() async {
     try {
       final response = await _dio.get('/ajax.php', queryParameters: {'act': 'get_token'});
-      if (response.data['code'] == 0) {
-        _csrfToken = response.data['csrf_token'];
+      final data = _safeResponse(response);
+      if (data['code'] == 0) {
+        _csrfToken = data['csrf_token'];
         return _csrfToken;
       }
     } catch (e) {
@@ -68,13 +74,14 @@ class ApiClient {
         queryParameters: {'act': 'local_login'},
         data: FormData.fromMap({'username': username, 'password': password}),
       );
-      if (response.data['code'] == 0) {
+      final data = _safeResponse(response);
+      if (data['code'] == 0) {
         _isLoggedIn = true;
         await getCsrfToken();
         await loadUserInfo();
         return {'success': true};
       }
-      return {'success': false, 'message': response.data['msg'] ?? '登录失败'};
+      return {'success': false, 'message': data['msg'] ?? '登录失败'};
     } catch (e) {
       print('Login error: $e');
       return {'success': false, 'message': '网络错误，请检查服务器地址或网络连接'};
@@ -87,14 +94,14 @@ class ApiClient {
         queryParameters: {'act': 'local_register'},
         data: FormData.fromMap({'username': username, 'password': password, 'repassword': repassword}),
       );
-      final responseData = response.data is Map ? response.data : {};
-      if (responseData['code'] == 0) {
+      final data = _safeResponse(response);
+      if (data['code'] == 0) {
         _isLoggedIn = true;
         await getCsrfToken();
         await loadUserInfo();
         return {'success': true};
       }
-      return {'success': false, 'message': responseData['msg'] ?? '注册失败'};
+      return {'success': false, 'message': data['msg'] ?? '注册失败'};
     } catch (e) {
       print('Register error: $e');
       return {'success': false, 'message': '网络错误，请检查服务器地址或网络连接'};
@@ -104,9 +111,10 @@ class ApiClient {
   Future<void> loadUserInfo() async {
     try {
       final response = await _dio.get('/ajax.php', queryParameters: {'act': 'get_user_info'});
-      if (response.data['code'] == 0) {
-        _userInfo = response.data['data'] ?? {};
-        _userId = _userInfo['uid'] ?? 0;
+      final data = _safeResponse(response);
+      if (data['code'] == 0) {
+        _userInfo = Map<String, dynamic>.from(data['data'] ?? {});
+        _userId = _toInt(_userInfo['uid']);
         _isLoggedIn = _userId > 0;
       } else {
         _isLoggedIn = false;
@@ -125,8 +133,9 @@ class ApiClient {
         if (keyword.isNotEmpty) 'keyword': keyword,
         if (showHidden) 'hide': 1,
       });
-      if (response.data['code'] == 0) {
-        return (response.data['files'] as List).map((e) => FileModel.fromJson(e)).toList();
+      final data = _safeResponse(response);
+      if (data['code'] == 0) {
+        return (data['files'] as List).map((e) => FileModel.fromJson(e)).toList();
       }
     } catch (e) {
       print('loadFileList error: $e');
@@ -173,5 +182,43 @@ class ApiClient {
 
   String getFullUrl(String path) {
     return '$_baseUrl$path';
+  }
+
+  Map<String, dynamic> _safeResponse(Response response) {
+    if (response.data is Map<String, dynamic>) {
+      return response.data as Map<String, dynamic>;
+    }
+    if (response.data is String) {
+      try {
+        final parsed = _tryParseJson(response.data as String);
+        if (parsed != null) return parsed;
+      } catch (_) {}
+    }
+    return {'code': -1, 'msg': '服务器返回了非JSON响应'};
+  }
+
+  Map<String, dynamic>? _tryParseJson(String str) {
+    str = str.trim();
+    if (!str.startsWith('{') && !str.startsWith('[')) return null;
+    final idx = str.indexOf('{');
+    if (idx < 0) return null;
+    final sub = str.substring(idx);
+    try {
+      final parsed = _jsonDecode(sub);
+      if (parsed is Map<String, dynamic>) return parsed;
+      if (parsed is Map) return Map<String, dynamic>.from(parsed);
+    } catch (_) {}
+    return null;
+  }
+
+  dynamic _jsonDecode(String s) {
+    return const JsonDecoder().convert(s);
+  }
+
+  int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }
