@@ -47,8 +47,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     final authProvider = context.read<AuthProvider>();
     final username = _loginUsernameController.text.trim();
     final password = _loginPasswordController.text;
-    final success = await authProvider.login(username, password);
+    final result = await authProvider.login(username, password);
     setState(() => _isLoginLoading = false);
+    final success = result['success'] == true;
+    final message = result['message'] ?? (success ? '登录成功' : '登录失败');
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('登录成功'), backgroundColor: Colors.green),
@@ -56,7 +58,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       Navigator.of(context).pushReplacementNamed('/home');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('用户名或密码错误'), backgroundColor: Colors.red),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }

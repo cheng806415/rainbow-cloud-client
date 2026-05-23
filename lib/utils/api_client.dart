@@ -62,7 +62,7 @@ class ApiClient {
     return null;
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<Map<String, dynamic>> login(String username, String password) async {
     try {
       final response = await _dio.post('/login.php',
         queryParameters: {'act': 'local_login'},
@@ -72,12 +72,12 @@ class ApiClient {
         _isLoggedIn = true;
         await getCsrfToken();
         await loadUserInfo();
-        return true;
+        return {'success': true};
       }
-      return false;
+      return {'success': false, 'message': response.data['msg'] ?? '登录失败'};
     } catch (e) {
       print('Login error: $e');
-      return false;
+      return {'success': false, 'message': '网络错误，请检查服务器地址或网络连接'};
     }
   }
 
