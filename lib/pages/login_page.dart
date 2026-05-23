@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -55,7 +56,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('登录成功'), backgroundColor: Colors.green),
       );
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -84,7 +87,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('注册成功，已自动登录'), backgroundColor: Colors.green),
       );
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
