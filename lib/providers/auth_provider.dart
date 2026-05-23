@@ -35,7 +35,7 @@ class AuthProvider extends ChangeNotifier {
     return await _apiClient.login(username, password);
   }
 
-  Future<bool> register(String username, String password, String repassword) async {
+  Future<Map<String, dynamic>> register(String username, String password, String repassword) async {
     return await _apiClient.register(username, password, repassword);
   }
 

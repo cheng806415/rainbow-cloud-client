@@ -81,22 +81,23 @@ class ApiClient {
     }
   }
 
-  Future<bool> register(String username, String password, String repassword) async {
+  Future<Map<String, dynamic>> register(String username, String password, String repassword) async {
     try {
       final response = await _dio.post('/login.php',
         queryParameters: {'act': 'local_register'},
         data: {'username': username, 'password': password, 'repassword': repassword},
       );
-      if (response.data['code'] == 0) {
+      final responseData = response.data is Map ? response.data : {};
+      if (responseData['code'] == 0) {
         _isLoggedIn = true;
         await getCsrfToken();
         await loadUserInfo();
-        return true;
+        return {'success': true};
       }
-      return false;
+      return {'success': false, 'message': responseData['msg'] ?? '注册失败'};
     } catch (e) {
       print('Register error: $e');
-      return false;
+      return {'success': false, 'message': '网络错误，请检查服务器地址或网络连接'};
     }
   }
 

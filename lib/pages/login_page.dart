@@ -77,12 +77,14 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     }
     setState(() => _isRegisterLoading = true);
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.register(
+    final result = await authProvider.register(
       _regUsernameController.text.trim(),
       _regPasswordController.text,
       _regRepasswordController.text,
     );
     setState(() => _isRegisterLoading = false);
+    final success = result['success'] == true;
+    final message = result['message'] ?? (success ? '注册成功，已自动登录' : '注册失败，请稍后重试');
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('注册成功，已自动登录'), backgroundColor: Colors.green),
@@ -90,7 +92,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       Navigator.of(context).pushReplacementNamed('/home');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('注册失败，请稍后重试'), backgroundColor: Colors.red),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }
