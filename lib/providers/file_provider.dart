@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../utils/api_client.dart';
 import '../models/file_model.dart';
 
