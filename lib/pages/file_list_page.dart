@@ -5,7 +5,9 @@ import '../providers/folder_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/file_model.dart';
 import '../models/folder_model.dart';
+import '../utils/download_manager.dart';
 import 'preview_page.dart';
+import 'download_page.dart';
 
 class FileListPage extends StatefulWidget {
   const FileListPage({super.key});
@@ -109,6 +111,14 @@ class _FileListPageState extends State<FileListPage> {
                 },
               ),
             ListTile(
+              leading: const Icon(Icons.download),
+              title: const Text('下载'),
+              onTap: () {
+                Navigator.pop(context);
+                _startDownload(file);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.delete),
               title: const Text('删除'),
               onTap: () async {
@@ -139,6 +149,17 @@ class _FileListPageState extends State<FileListPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _startDownload(FileModel file) {
+    final downloadManager = DownloadManager();
+    downloadManager.startDownload(file);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已添加下载任务: ${file.name}'),
+        backgroundColor: Colors.blue,
       ),
     );
   }
