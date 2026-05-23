@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import '../providers/file_provider.dart';
 import '../providers/folder_provider.dart';
 import '../providers/auth_provider.dart';
@@ -8,6 +9,7 @@ import '../models/folder_model.dart';
 import '../utils/download_manager.dart';
 import 'preview_page.dart';
 import 'download_page.dart';
+import 'upload_page.dart';
 
 class FileListPage extends StatefulWidget {
   const FileListPage({super.key});
@@ -27,6 +29,7 @@ class _FileListPageState extends State<FileListPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadFiles();
+      context.read<FolderProvider>().loadFolders();
     });
   }
 
@@ -164,6 +167,12 @@ class _FileListPageState extends State<FileListPage> {
     );
   }
 
+  void _pickAndUploadFile() {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => const UploadPage(),
+    )).then((_) => _refreshFiles());
+  }
+
   Future<void> _batchDelete() async {
     final selected = context.read<FileProvider>().selectedFiles;
     if (selected.isEmpty) return;
@@ -263,7 +272,13 @@ class _FileListPageState extends State<FileListPage> {
               icon: const Icon(Icons.delete),
               label: Text('删除选中 (${context.watch<FileProvider>().selectedFiles.length})'),
             )
-          : null,
+          : _isSelectionMode
+              ? null
+              : FloatingActionButton(
+                  onPressed: _pickAndUploadFile,
+                  tooltip: '上传文件',
+                  child: const Icon(Icons.upload),
+                ),
       body: Column(
         children: [
           Consumer<FolderProvider>(
@@ -336,11 +351,7 @@ class _FileListPageState extends State<FileListPage> {
                       final isSelected = fileProvider.selectedFiles.contains(file);
 
                       return ListTile(
-                        leading: Icon(
-                          Icons.folder,
-                          color: _getFolderColor(file),
-                          size: 40,
-                        ),
+                        leading: _getFileLeadingIcon(file),
                         title: Text(
                           file.name,
                           maxLines: 1,
@@ -391,7 +402,23 @@ class _FileListPageState extends State<FileListPage> {
     );
   }
 
-  Color _getFolderColor(FileModel file) {
+  Widget _getFileLeadingIcon(FileModel file) {
+    return Icon(
+      _getFileIcon(file),
+      color: _getFileColor(file),
+      size: 40,
+    );
+  }
+
+  IconData _getFileIcon(FileModel file) {
+    if (file.isImage) return Icons.image;
+    if (file.isVideo) return Icons.videocam;
+    if (file.isAudio) return Icons.audiotrack;
+    if (file.isPdf) return Icons.picture_as_pdf;
+    return Icons.insert_drive_file;
+  }
+
+  Color _getFileColor(FileModel file) {
     if (file.isImage) return Colors.pink;
     if (file.isVideo) return Colors.purple;
     if (file.isAudio) return Colors.orange;
